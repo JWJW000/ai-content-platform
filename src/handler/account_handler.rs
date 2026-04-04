@@ -1,0 +1,61 @@
+use crate::models::{AccountResponse, CreateAccountRequest};
+use crate::service::account_service;
+use axum::{
+    extract::Path,
+    http::StatusCode,
+    Json,
+};
+use axum::response::IntoResponse;
+use uuid::Uuid;
+
+pub async fn list_accounts() -> impl IntoResponse {
+    match account_service::get_all_accounts().await {
+        Ok(accounts) => {
+            let response: Vec<AccountResponse> = accounts.into_iter().map(|a| a.into()).collect();
+            (StatusCode::OK, Json(serde_json::json!({
+                "code": 0,
+                "data": response,
+                "message": "success"
+            }))).into_response()
+        }
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "message": e.to_string()
+        }))).into_response(),
+    }
+}
+
+pub async fn create_account(
+    Json(payload): Json<CreateAccountRequest>,
+) -> impl IntoResponse {
+    match account_service::create_account(payload).await {
+        Ok(account) => (StatusCode::CREATED, Json(serde_json::json!({
+            "code": 0,
+            "data": AccountResponse::from(account),
+            "message": "success"
+        }))).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "message": e.to_string()
+        }))).into_response(),
+    }
+}
+
+pub async fn delete_account(
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    match account_service::delete_account(id).await {
+        Ok(()) => (StatusCode::OK, Json(serde_json::json!({
+            "code": 0,
+            "data": null,
+            "message": "Account deleted"
+        }))).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "message": e.to_string()
+        }))).into_response(),
+    }
+}
