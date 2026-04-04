@@ -4,6 +4,14 @@ use anyhow::Result;
 use std::path::PathBuf;
 use uuid::Uuid;
 
+/// 创建账号响应
+#[derive(Debug, serde::Serialize)]
+pub struct CreateAccountResponse {
+    pub account: Account,
+    pub login_triggered: bool,
+    pub message: String,
+}
+
 /// 获取所有账号
 pub async fn get_all_accounts() -> Result<Vec<Account>> {
     account_repo::get_all_accounts().await
@@ -14,19 +22,44 @@ pub async fn get_account_by_id(id: Uuid) -> Result<Option<Account>> {
     account_repo::get_account_by_id(id).await
 }
 
-/// 创建账号
-pub async fn create_account(req: CreateAccountRequest) -> Result<Account> {
+/// 创建账号（自动触发登录流程）
+pub async fn create_account(req: CreateAccountRequest) -> Result<CreateAccountResponse> {
     let account = Account {
         id: Uuid::new_v4(),
-        platform: req.platform,
-        username: req.username,
-        auth: req.auth.unwrap_or_default(),
+        platform: req.platform.clone(),
+        username: req.username.clone(),
+        auth: String::new(),
         cookie_path: None,
-        status: "pending_login".to_string(), // 新账号需要登录
+        status: "pending_login".to_string(),
         created_at: chrono::Utc::now(),
     };
     account_repo::insert_account(&account).await?;
-    Ok(account)
+    
+    // 自动触发登录流程
+    let login_result = trigger_login(&account).await;
+    
+    match login_result {
+        Ok(_) => {
+            // 更新账号状态为已登录
+            account_repo::update_account_status(&account.id, "active").await?;
+            
+            let logged_in_account = account_repo::get_account_by_id(account.id).await?.unwrap();
+            
+            Ok(CreateAccountResponse {
+                account: logged_in_account,
+                login_triggered: true,
+                message: "Account created and login completed".to_string(),
+            })
+        }
+        Err(e) => {
+            // 登录失败，返回账号但标记需要登录
+            Ok(CreateAccountResponse {
+                account,
+                login_triggered: false,
+                message: format!("Account created but login failed: {}. Please trigger login manually.", e),
+            })
+        }
+    }
 }
 
 /// 删除账号
@@ -39,20 +72,10 @@ pub async fn login_account(id: Uuid) -> Result<LoginResponse> {
     let account = account_repo::get_account_by_id(id).await?
         .ok_or_else(|| anyhow::anyhow!("Account not found"))?;
     
-    // 构建 cookie 文件路径
-    let cookie_dir = get_cookie_dir()?;
-    std::fs::create_dir_all(&cookie_dir)?;
-    let cookie_path = cookie_dir.join(format!("{}_{}.json", account.platform, account.id));
-    let cookie_path_str = cookie_path.to_string_lossy().to_string();
+    trigger_login(&account).await?;
     
-    match account.platform.as_str() {
-        "xiaohongshu" => login_xiaohongshu(&cookie_path_str).await,
-        "douyin" => login_douyin(&cookie_path_str).await,
-        _ => Err(anyhow::anyhow!("Unsupported platform: {}", account.platform)),
-    }?;
-    
-    // 更新账号的 cookie 路径
-    account_repo::update_account_cookie_path(id, &cookie_path_str).await?;
+    // 更新账号状态
+    account_repo::update_account_status(&id, "active").await?;
     
     Ok(LoginResponse {
         success: true,
@@ -71,7 +94,6 @@ pub async fn verify_account(id: Uuid) -> Result<bool> {
         if account.auth.is_empty() {
             return Ok(false);
         }
-        // 如果 auth 存在但没有 cookie_path，认为有效
         return Ok(true);
     }
     
@@ -85,6 +107,25 @@ pub async fn verify_account(id: Uuid) -> Result<bool> {
         "douyin" => verify_douyin(cookie_path).await,
         _ => Err(anyhow::anyhow!("Unsupported platform: {}", account.platform)),
     }
+}
+
+/// 触发登录流程
+async fn trigger_login(account: &Account) -> Result<()> {
+    let cookie_dir = get_cookie_dir()?;
+    std::fs::create_dir_all(&cookie_dir)?;
+    let cookie_path = cookie_dir.join(format!("{}_{}.json", account.platform, account.id));
+    let cookie_path_str = cookie_path.to_string_lossy().to_string();
+    
+    match account.platform.as_str() {
+        "xiaohongshu" => login_xiaohongshu(&cookie_path_str).await,
+        "douyin" => login_douyin(&cookie_path_str).await,
+        _ => Err(anyhow::anyhow!("Unsupported platform: {}", account.platform)),
+    }?;
+    
+    // 更新账号的 cookie 路径
+    account_repo::update_account_cookie_path(account.id, &cookie_path_str).await?;
+    
+    Ok(())
 }
 
 /// 获取 Cookie 存储目录
@@ -106,7 +147,6 @@ async fn login_xiaohongshu(cookie_path: &str) -> Result<()> {
     
     tracing::info!("Starting Xiaohongshu login, saving cookies to: {}", cookie_path);
     
-    // 调用 rust_drission 的登录功能
     let result = xiaohongshu_login(cookie_path)
         .map_err(|e| anyhow::anyhow!("Xiaohongshu login failed: {:?}", e))?;
     

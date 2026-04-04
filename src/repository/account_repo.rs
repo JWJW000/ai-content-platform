@@ -62,3 +62,13 @@ pub async fn delete_account(id: Uuid) -> Result<()> {
         .await?;
     Ok(())
 }
+
+pub async fn update_account_status(id: &Uuid, status: &str) -> Result<()> {
+    let pool = get_pool();
+    sqlx::query("UPDATE accounts SET status = $1 WHERE id = $2")
+        .bind(status)
+        .bind(id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}

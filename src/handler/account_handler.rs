@@ -1,5 +1,5 @@
-use crate::models::{AccountResponse, CreateAccountRequest, LoginRequest, LoginResponse};
-use crate::service::account_service;
+use crate::models::{AccountResponse, CreateAccountRequest, LoginResponse};
+use crate::service::account_service::{self, CreateAccountResponse};
 use axum::{
     extract::Path,
     http::StatusCode,
@@ -30,11 +30,18 @@ pub async fn create_account(
     Json(payload): Json<CreateAccountRequest>,
 ) -> impl IntoResponse {
     match account_service::create_account(payload).await {
-        Ok(account) => (StatusCode::CREATED, Json(serde_json::json!({
-            "code": 0,
-            "data": AccountResponse::from(account),
-            "message": "success"
-        }))).into_response(),
+        Ok(result) => {
+            let response = serde_json::json!({
+                "account": AccountResponse::from(result.account),
+                "login_triggered": result.login_triggered,
+                "message": result.message
+            });
+            (StatusCode::CREATED, Json(serde_json::json!({
+                "code": 0,
+                "data": response,
+                "message": "success"
+            }))).into_response()
+        }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
             "code": 500,
             "data": null,
