@@ -49,4 +49,8 @@ rand = "0.8"
 # HTTP client for AI API
 reqwest = { version = "0.12", features = ["json"] }
 
-# No dev dependencies for now
+# Browser automation & social media upload (rust_drission)
+rust_drission = { path = "../rust_drission" }
+
+# Directory paths
+dirs = "5"

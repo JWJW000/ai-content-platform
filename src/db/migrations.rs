@@ -48,10 +48,26 @@ pub async fn run_migrations() -> Result<()> {
             id UUID PRIMARY KEY,
             platform VARCHAR(50) NOT NULL,
             username VARCHAR(255) NOT NULL,
-            auth TEXT NOT NULL,
+            auth TEXT NOT NULL DEFAULT '',
+            cookie_path TEXT,
             status VARCHAR(20) NOT NULL DEFAULT 'active',
             created_at TIMESTAMPTZ NOT NULL
         )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+    
+    // 添加 cookie_path 列（如果不存在）- 兼容已有数据库
+    sqlx::query(
+        r#"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'accounts' AND column_name = 'cookie_path') THEN
+                ALTER TABLE accounts ADD COLUMN cookie_path TEXT;
+            END IF;
+        END $$;
         "#,
     )
     .execute(pool)

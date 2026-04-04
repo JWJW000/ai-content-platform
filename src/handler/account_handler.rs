@@ -1,4 +1,4 @@
-use crate::models::{AccountResponse, CreateAccountRequest};
+use crate::models::{AccountResponse, CreateAccountRequest, LoginRequest, LoginResponse};
 use crate::service::account_service;
 use axum::{
     extract::Path,
@@ -51,6 +51,42 @@ pub async fn delete_account(
             "code": 0,
             "data": null,
             "message": "Account deleted"
+        }))).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "message": e.to_string()
+        }))).into_response(),
+    }
+}
+
+/// 登录账号（触发浏览器进行扫码登录）
+pub async fn login_account(
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    match account_service::login_account(id).await {
+        Ok(response) => (StatusCode::OK, Json(serde_json::json!({
+            "code": 0,
+            "data": response,
+            "message": "success"
+        }))).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "message": e.to_string()
+        }))).into_response(),
+    }
+}
+
+/// 验证账号 Cookie 是否有效
+pub async fn verify_account(
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    match account_service::verify_account(id).await {
+        Ok(valid) => (StatusCode::OK, Json(serde_json::json!({
+            "code": 0,
+            "data": { "valid": valid },
+            "message": if valid { "valid" } else { "invalid" }
         }))).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
             "code": 500,

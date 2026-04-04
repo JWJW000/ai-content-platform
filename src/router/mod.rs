@@ -17,6 +17,8 @@ pub fn get_routes() -> Router {
         .route("/api/accounts", get(account_handler::list_accounts))
         .route("/api/accounts", post(account_handler::create_account))
         .route("/api/accounts/:id", delete(account_handler::delete_account))
+        .route("/api/accounts/:id/login", post(account_handler::login_account))
+        .route("/api/accounts/:id/verify", get(account_handler::verify_account))
         // Log routes
         .route("/api/logs", get(log_handler::list_logs))
         .route("/api/logs/:task_id", get(log_handler::get_logs_by_task))
