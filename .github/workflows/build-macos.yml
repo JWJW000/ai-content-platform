@@ -2,7 +2,7 @@ name: Build & Release macOS App
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'net_guard/**'
   workflow_dispatch:
