@@ -11,7 +11,8 @@ jobs:
   build:
     runs-on: macos-latest
     permissions:
-      contents: write
+      contents: read
+      packages: write
     
     steps:
       - name: Checkout
@@ -35,12 +36,19 @@ jobs:
           tar -czvf net_guard-macos.tar.gz dist/net_guard
           ls -la *.gz
 
-      - name: Upload Release Asset
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: net_guard-macos
+          path: net_guard/*.tar.gz
+          retention-days: 30
+
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v0.1.0
           release_name: NetGuard v0.1.0
-          draft: false
+          draft: true
           prerelease: false
           files: |
             net_guard/*.tar.gz
