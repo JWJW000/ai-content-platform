@@ -83,25 +83,25 @@ fn render_ui(f: &mut Frame, app: &App) {
         .split(f.size());
     
     // Title
-    let title = ratatui::widgets::Paragraph::new("🌐 NetGuard - Network Traffic Monitor")
+    let title = ratatui::widgets::Paragraph::new("🌐 NetGuard - 网络流量监控")
         .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
-        .block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title("Status"));
+        .block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title("状态"));
     f.render_widget(title, chunks[0]);
     
     // Speed display
     let speed_text = format!(
-        "↑ Upload: {:>10}    ↓ Download: {:>10}",
+        "↑ 上传: {:>10}    ↓ 下载: {:>10}",
         format_speed(app.current_speed_in),
         format_speed(app.current_speed_out)
     );
     let speed = ratatui::widgets::Paragraph::new(speed_text)
         .style(ratatui::style::Style::default().fg(ratatui::style::Color::Green))
-        .block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title("Real-time Speed"));
+        .block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title("实时速度"));
     f.render_widget(speed, chunks[1]);
     
     // Process list
     let mut process_text = String::new();
-    process_text.push_str(&format!("{:<30} {:>15} {:>15}\n", "Process", "↑ Upload", "↓ Download"));
+    process_text.push_str(&format!("{:<30} {:>15} {:>15}\n", "进程", "↑ 上传", "↓ 下载"));
     process_text.push_str(&"─".repeat(60));
     process_text.push('\n');
     
@@ -124,7 +124,7 @@ fn render_ui(f: &mut Frame, app: &App) {
     
     let process_block = ratatui::widgets::Paragraph::new(process_text)
         .style(ratatui::style::Style::default().fg(ratatui::style::Color::White))
-        .block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title("📊 Process Ranking (by traffic)"));
+        .block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title("📊 进程排名（按流量）"));
     f.render_widget(process_block, chunks[2]);
 }
 
@@ -157,6 +157,6 @@ fn main() -> Result<(), String> {
     disable_raw_mode().map_err(|e| e.to_string())?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen).map_err(|e| e.to_string())?;
     
-    println!("Thanks for using NetGuard!");
+    println!("感谢使用 NetGuard！");
     Ok(())
 }
