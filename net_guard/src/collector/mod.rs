@@ -7,12 +7,8 @@ mod process;
 
 pub use nettop::NettopCollector;
 pub use process::{ProcessInfo, get_process_info};
-pub use collector::TrafficCollector;
 
-use std::sync::Arc;
-use std::process::Command;
-use std::time::{Duration, Instant};
-use parking_lot::Mutex;
+use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 /// Traffic data for a single process

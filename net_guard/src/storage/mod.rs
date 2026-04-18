@@ -2,6 +2,6 @@
 //! 
 //! Handles historical data storage with 7-day TTL.
 
-mod database;
+pub mod database;
 
 pub use database::Database;

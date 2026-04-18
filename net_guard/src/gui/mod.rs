@@ -10,11 +10,32 @@ pub use traffic_panel::TrafficPanel;
 pub use process_list::ProcessList;
 pub use history_chart::HistoryChart;
 
-use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
-use crate::collector::{ProcessTraffic, TrafficCollector};
+use crate::collector::TrafficCollector;
 use crate::storage::Database;
-use crate::utils::{format_speed, format_bytes};
+
+/// Trait for GUI components that can be added to egui UI
+pub trait GuiComponent {
+    fn as_mut(&mut self) -> &mut dyn egui::Widget;
+}
+
+impl GuiComponent for TrafficPanel {
+    fn as_mut(&mut self) -> &mut dyn egui::Widget {
+        self
+    }
+}
+
+impl GuiComponent for ProcessList {
+    fn as_mut(&mut self) -> &mut dyn egui::Widget {
+        self
+    }
+}
+
+impl GuiComponent for HistoryChart {
+    fn as_mut(&mut self) -> &mut dyn egui::Widget {
+        self
+    }
+}
 
 /// Main application state
 pub struct NetGuardApp {

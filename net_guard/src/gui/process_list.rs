@@ -1,7 +1,7 @@
 //! Process ranking list showing traffic by process
 
 use crate::collector::ProcessTraffic;
-use crate::utils::{format_bytes};
+use crate::utils::format_bytes;
 
 pub struct ProcessList {
     processes: Vec<ProcessTraffic>,
@@ -25,15 +25,9 @@ impl ProcessList {
     }
 }
 
-impl super::GuiComponent for ProcessList {
-    fn as_mut(&mut self) -> &mut dyn eframe::egui::Widget {
-        self
-    }
-}
-
 impl egui::Widget for ProcessList {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        ui.scroll_container::<&str>("process_list", |ui| {
+        egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
             egui::Grid::new("process_grid")
                 .num_columns(4)
                 .spacing([10.0, 5.0])

@@ -4,7 +4,6 @@
 
 use super::ProcessTraffic;
 use std::process::Command;
-use std::str::FromStr;
 
 /// Collector using macOS nettop command
 pub struct NettopCollector {

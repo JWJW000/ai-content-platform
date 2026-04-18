@@ -8,8 +8,7 @@
 
 use rusqlite::{Connection, Result as SqliteResult};
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
-use chrono::{DateTime, Utc, Duration};
+use chrono::{Utc, Duration};
 
 /// Database handle for traffic data storage
 pub struct Database {

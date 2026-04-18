@@ -1,7 +1,7 @@
 //! Traffic panel showing real-time upload/download speeds
 
 use std::collections::VecDeque;
-use crate::utils::{format_speed, format_bytes};
+use crate::utils::format_speed;
 
 pub struct TrafficPanel {
     bytes_in: u64,
@@ -27,17 +27,6 @@ impl TrafficPanel {
         self.speed_out = speed_out;
         self.history = history.clone();
     }
-}
-
-impl super::GuiComponent for TrafficPanel {
-    fn as_mut(&mut self) -> &mut dyn eframe::egui::Widget {
-        self
-    }
-}
-
-/// Trait for GUI components
-pub trait GuiComponent {
-    fn as_mut(&mut self) -> &mut dyn egui::Widget;
 }
 
 impl egui::Widget for TrafficPanel {

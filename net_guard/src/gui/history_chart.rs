@@ -40,12 +40,6 @@ impl HistoryChart {
     }
 }
 
-impl super::GuiComponent for HistoryChart {
-    fn as_mut(&mut self) -> &mut dyn eframe::egui::Widget {
-        self
-    }
-}
-
 impl egui::Widget for HistoryChart {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         ui.vertical(|ui| {

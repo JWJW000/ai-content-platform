@@ -1,7 +1,5 @@
 //! Utility functions
 
-use std::fmt::Write;
-
 /// Format bytes to human-readable string (KB, MB, GB, etc.)
 pub fn format_bytes(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];

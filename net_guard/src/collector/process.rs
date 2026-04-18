@@ -31,9 +31,6 @@ pub fn get_process_info(pid: u32) -> Option<ProcessInfo> {
 
 #[cfg(target_os = "macos")]
 fn get_process_info_macos(pid: u32) -> Option<ProcessInfo> {
-    use std::ffi::CString;
-    use std::mem::MaybeUninit;
-    
     // Get process name using libproc
     let mut name_buf = [0u8; 256];
     let name_len = unsafe {
