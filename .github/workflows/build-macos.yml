@@ -23,7 +23,7 @@ jobs:
       - name: Build Release
         working-directory: ./net_guard
         run: |
-          cargo build --release --locked
+          cargo build --release
           ls -la target/release/net_guard || ls -la target/release/*.app 2>/dev/null || echo "Binary location check"
 
       - name: Create .app bundle
