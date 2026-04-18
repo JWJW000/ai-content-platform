@@ -41,21 +41,17 @@ impl HistoryChart {
 }
 
 impl egui::Widget for HistoryChart {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+    fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
         ui.vertical(|ui| {
-            // View toggle buttons
             ui.horizontal(|ui| {
                 if ui.selectable_label(self.view_mode == ViewMode::Hourly, "Hourly").clicked() {
-                    let mut chart = self;
-                    chart.view_mode = ViewMode::Hourly;
+                    self.view_mode = ViewMode::Hourly;
                 }
                 if ui.selectable_label(self.view_mode == ViewMode::Daily, "Daily").clicked() {
-                    let mut chart = self;
-                    chart.view_mode = ViewMode::Daily;
+                    self.view_mode = ViewMode::Daily;
                 }
             });
             
-            // Show data summary
             match self.view_mode {
                 ViewMode::Hourly => {
                     if self.hourly_data.is_empty() {
@@ -69,7 +65,6 @@ impl egui::Widget for HistoryChart {
                             format_bytes(total_in)
                         ));
                         
-                        // Simple bar representation
                         egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
                             let max_val = self.hourly_data.iter()
                                 .map(|h| h.bytes_in.max(h.bytes_out))
@@ -82,9 +77,9 @@ impl egui::Widget for HistoryChart {
                                 
                                 ui.horizontal(|ui| {
                                     ui.label(format_bytes(h.bytes_in));
-                                    egui::Widget::ui(&mut egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE), ui);
+                                    ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
                                     ui.add_space(10.0);
-                                    egui::Widget::ui(&mut egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN), ui);
+                                    ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
                                     ui.label(format_bytes(h.bytes_out));
                                 });
                             }
@@ -103,7 +98,6 @@ impl egui::Widget for HistoryChart {
                             format_bytes(total_in)
                         ));
                         
-                        // Bar chart
                         egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
                             let max_val = self.daily_data.iter()
                                 .map(|d| d.bytes_in.max(d.bytes_out))
@@ -116,9 +110,9 @@ impl egui::Widget for HistoryChart {
                                 
                                 ui.horizontal(|ui| {
                                     ui.label(&d.day);
-                                    egui::Widget::ui(&mut egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE), ui);
+                                    ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
                                     ui.add_space(10.0);
-                                    egui::Widget::ui(&mut egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN), ui);
+                                    ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
                                 });
                             }
                         });

@@ -60,10 +60,14 @@ fn get_process_info_macos(pid: u32) -> Option<ProcessInfo> {
     };
     
     // Try to get icon path
-    let icon_path = bundle_path.as_ref()
-        .and_then(|bp| bp.join("Contents/Resources/AppIcon.icns").exists())
-        .then(|| bundle_path.clone().map(|p| p.join("Contents/Resources/AppIcon.icns")))
-        .flatten();
+    let icon_path = bundle_path.as_ref().and_then(|bp| {
+        let icon_path = bp.join("Contents/Resources/AppIcon.icns");
+        if icon_path.exists() {
+            Some(icon_path)
+        } else {
+            None
+        }
+    });
     
     Some(ProcessInfo {
         pid,

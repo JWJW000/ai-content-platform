@@ -4,8 +4,6 @@ use std::collections::VecDeque;
 use crate::utils::format_speed;
 
 pub struct TrafficPanel {
-    bytes_in: u64,
-    bytes_out: u64,
     speed_in: u64,
     speed_out: u64,
     history: VecDeque<(f32, f32)>,
@@ -14,8 +12,6 @@ pub struct TrafficPanel {
 impl TrafficPanel {
     pub fn new() -> Self {
         Self {
-            bytes_in: 0,
-            bytes_out: 0,
             speed_in: 0,
             speed_out: 0,
             history: VecDeque::with_capacity(60),
@@ -32,7 +28,6 @@ impl TrafficPanel {
 impl egui::Widget for TrafficPanel {
     fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
         ui.vertical(|ui| {
-            // Speed display
             ui.horizontal(|ui| {
                 ui.label("↑ Upload:");
                 ui.label(egui::RichText::new(format_speed(self.speed_in)).color(egui::Color32::GREEN));
@@ -43,24 +38,23 @@ impl egui::Widget for TrafficPanel {
                 ui.label(egui::RichText::new(format_speed(self.speed_out)).color(egui::Color32::BLUE));
             });
             
-            // Simple speed visualization
             ui.add_space(10.0);
             
-            let max_speed = self.speed_in.max(self.speed_out).max(1) as f32;
+            let max_speed = (self.speed_in.max(self.speed_out) as f32).max(1.0);
             
             // Upload bar
             ui.horizontal(|ui| {
                 ui.label("↑");
-                let upload_ratio = self.speed_in as f32 / max_speed;
-                egui::Widget::ui(&mut egui::ProgressBar::new(upload_ratio as f64).fill(egui::Color32::GREEN), ui);
+                let ratio = self.speed_in as f32 / max_speed;
+                ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::GREEN));
                 ui.label(format_speed(self.speed_in));
             });
             
             // Download bar
             ui.horizontal(|ui| {
                 ui.label("↓");
-                let download_ratio = self.speed_out as f32 / max_speed;
-                egui::Widget::ui(&mut egui::ProgressBar::new(download_ratio as f64).fill(egui::Color32::BLUE), ui);
+                let ratio = self.speed_out as f32 / max_speed;
+                ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::BLUE));
                 ui.label(format_speed(self.speed_out));
             });
         }).response
