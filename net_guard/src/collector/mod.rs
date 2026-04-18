@@ -1,6 +1,6 @@
 //! Data collection module
 //! 
-//! Handles network traffic data collection using nettop and process information.
+//! Handles network traffic data collection using nettop.
 
 mod nettop;
 mod process;
@@ -8,8 +8,8 @@ mod process;
 pub use nettop::NettopCollector;
 pub use process::{ProcessInfo, get_process_info};
 
-use std::time::Instant;
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 
 /// Traffic data for a single process
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,7 +49,6 @@ impl TrafficCollector {
     pub fn collect(&mut self) -> Result<Vec<ProcessTraffic>, String> {
         let processes = self.nettop.collect()?;
         
-        // Calculate totals
         let mut total_in = 0u64;
         let mut total_out = 0u64;
         
@@ -66,8 +65,8 @@ impl TrafficCollector {
     }
 
     /// Get current speed (bytes per second)
+    #[allow(dead_code)]
     pub fn get_speed(&self) -> (u64, u64) {
-        // For now, return raw values - speed calculation would need interval timing
         (self.last_bytes_in, self.last_bytes_out)
     }
 }

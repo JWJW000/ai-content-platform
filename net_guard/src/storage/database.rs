@@ -1,9 +1,5 @@
 //! SQLite database for traffic history storage
 //! 
-//! Schema:
-//! - traffic_history: hourly aggregated traffic data
-//! - process_snapshot: per-minute process-level data
-//! 
 //! Implements 7-day automatic cleanup (TTL strategy).
 
 use rusqlite::{Connection, Result as SqliteResult};
@@ -20,7 +16,6 @@ impl Database {
     pub fn new() -> SqliteResult<Self> {
         let db_path = Self::get_db_path();
         
-        // Ensure parent directory exists
         if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent).ok();
         }
@@ -34,16 +29,13 @@ impl Database {
 
     /// Get database file path
     fn get_db_path() -> PathBuf {
-        let home = std::env::var("HOME")
-            .unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home)
-            .join(".local/share/net_guard/traffic.db")
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        PathBuf::from(home).join(".local/share/net_guard/traffic.db")
     }
 
     /// Initialize database schema
     fn init_schema(&self) -> SqliteResult<()> {
         self.conn.execute_batch(r#"
-            -- Traffic history table (hourly aggregation)
             CREATE TABLE IF NOT EXISTS traffic_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp DATETIME NOT NULL,
@@ -52,7 +44,6 @@ impl Database {
                 sample_count INTEGER NOT NULL DEFAULT 1
             );
 
-            -- Process snapshot table (per-minute aggregation)
             CREATE TABLE IF NOT EXISTS process_snapshot (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp DATETIME NOT NULL,
@@ -62,12 +53,10 @@ impl Database {
                 bytes_out INTEGER NOT NULL
             );
 
-            -- Indexes for efficient queries
             CREATE INDEX IF NOT EXISTS idx_history_ts ON traffic_history(timestamp);
             CREATE INDEX IF NOT EXISTS idx_process_ts ON process_snapshot(timestamp);
         "#)?;
 
-        // Run cleanup on startup
         self.cleanup_old_data()?;
         
         Ok(())
@@ -97,7 +86,8 @@ impl Database {
         Ok(())
     }
 
-    /// Get hourly traffic data for last 24 hours
+    /// Get hourly traffic data for last N hours
+    #[allow(dead_code)]
     pub fn get_hourly_history(&self, hours: i64) -> SqliteResult<Vec<HourlyData>> {
         let cutoff = Utc::now() - Duration::hours(hours);
         
@@ -127,7 +117,8 @@ impl Database {
         Ok(data)
     }
 
-    /// Get daily traffic data for last 7 days
+    /// Get daily traffic data for last N days
+    #[allow(dead_code)]
     pub fn get_daily_history(&self, days: i64) -> SqliteResult<Vec<DailyData>> {
         let cutoff = Utc::now() - Duration::days(days);
         
@@ -162,24 +153,19 @@ impl Database {
         Ok(data)
     }
 
-    /// Clean up data older than 7 days (TTL policy)
+    /// Clean up data older than 7 days
     pub fn cleanup_old_data(&self) -> SqliteResult<()> {
         let cutoff = Utc::now() - Duration::days(7);
         
-        let deleted_history = self.conn.execute(
+        self.conn.execute(
             "DELETE FROM traffic_history WHERE timestamp < ?1",
             [cutoff.to_rfc3339()],
         )?;
         
-        let deleted_process = self.conn.execute(
+        self.conn.execute(
             "DELETE FROM process_snapshot WHERE timestamp < ?1",
             [cutoff.to_rfc3339()],
         )?;
-        
-        if deleted_history > 0 || deleted_process > 0 {
-            eprintln!("Cleaned up {} history and {} process records older than 7 days", 
-                     deleted_history, deleted_process);
-        }
         
         Ok(())
     }

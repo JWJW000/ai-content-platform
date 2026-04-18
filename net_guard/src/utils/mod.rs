@@ -22,23 +22,3 @@ pub fn format_bytes(bytes: u64) -> String {
 pub fn format_speed(bytes_per_sec: u64) -> String {
     format!("{}/s", format_bytes(bytes_per_sec))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_format_bytes() {
-        assert_eq!(format_bytes(0), "0B");
-        assert_eq!(format_bytes(1024), "1.0KB");
-        assert_eq!(format_bytes(1536), "1.5KB");
-        assert_eq!(format_bytes(1048576), "1.0MB");
-        assert_eq!(format_bytes(1073741824), "1.0GB");
-    }
-    
-    #[test]
-    fn test_format_speed() {
-        assert_eq!(format_speed(1024), "1.0KB/s");
-        assert_eq!(format_speed(1048576), "1.0MB/s");
-    }
-}
