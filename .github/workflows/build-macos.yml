@@ -1,4 +1,4 @@
-name: Build & Release macOS App
+name: Build macOS Binary
 
 on:
   push:
@@ -10,9 +10,6 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    permissions:
-      contents: read
-      packages: write
     
     steps:
       - name: Checkout
@@ -34,39 +31,11 @@ jobs:
           mkdir -p dist
           cp target/release/net_guard dist/
           tar -czvf net_guard-macos.tar.gz dist/net_guard
-          ls -la *.gz
+          ls -la *.tar.gz
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: net_guard-macos
+          name: net_guard-macos-binary
           path: net_guard/*.tar.gz
           retention-days: 30
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v0.1.0
-          release_name: NetGuard v0.1.0
-          draft: true
-          prerelease: false
-          files: |
-            net_guard/*.tar.gz
-          body: |
-            # NetGuard - macOS Network Traffic Monitor (CLI)
-            
-            A terminal-based network traffic monitor for macOS.
-            
-            ## Features
-            - 🌐 Real-time network traffic monitoring
-            - 📊 Process-level traffic ranking
-            - 📈 Historical data (7 days)
-            - 🖥️ Terminal UI (ratatui)
-            
-            ## Installation
-            1. Download the .tar.gz file
-            2. Extract: `tar -xzf net_guard-macos.tar.gz`
-            3. Run: `./dist/net_guard`
-            4. Press 'q' or 'Esc' to quit
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
