@@ -94,14 +94,14 @@ impl eframe::App for NetGuardApp {
             ui.heading("🌐 NetGuard - Network Traffic Monitor");
             ui.separator();
             
-            ui.add(&mut self.traffic_panel);
+            self.traffic_panel.ui(ui);
             
             ui.separator();
             
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     ui.heading("📊 Process Ranking");
-                    ui.add(&mut self.process_list);
+                    self.process_list.ui(ui);
                 });
                 
                 ui.separator();
@@ -111,7 +111,7 @@ impl eframe::App for NetGuardApp {
                     if let Ok(daily) = self.database.get_daily_history(7) {
                         self.history_chart.update_daily(&daily);
                     }
-                    ui.add(&mut self.history_chart);
+                    self.history_chart.ui(ui);
                 });
             });
         });
