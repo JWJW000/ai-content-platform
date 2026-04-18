@@ -1,11 +1,13 @@
 //! nettop command wrapper for macOS network traffic collection
 //! 
-//! Parses output from `nettop -P -J bytes_in,bytes_out -x -l 1`
+//! Parses output from `nettop -P -J bytes_in,bytes_out -x -L 1 -l 1`
+//! 
+//! Output format (CSV):
+//!   time,process_name.pid,bytes_in,bytes_out
 
 use super::ProcessTraffic;
 use std::process::Command;
 
-/// Collector using macOS nettop command
 pub struct NettopCollector {
     interval: u32,
 }
@@ -36,12 +38,18 @@ impl NettopCollector {
         Ok(Vec::new())
     }
 
-    /// Parse nettop output
+    /// Parse nettop CSV output
+    /// Format: time,process_name.pid,bytes_in,bytes_out
     #[cfg(target_os = "macos")]
     fn parse_output(&self, output: &str) -> Result<Vec<ProcessTraffic>, String> {
         let mut processes = Vec::new();
         
         for line in output.lines() {
+            // Skip header line
+            if line.starts_with("time,") || line.trim().is_empty() {
+                continue;
+            }
+            
             if let Some(process) = self.parse_line(line)? {
                 processes.push(process);
             }
@@ -50,38 +58,43 @@ impl NettopCollector {
         Ok(processes)
     }
 
-    /// Parse a single line of nettop output
+    /// Parse a single CSV line
+    /// Format: time,process_name.pid,bytes_in,bytes_out
     #[cfg(target_os = "macos")]
     fn parse_line(&self, line: &str) -> Result<Option<ProcessTraffic>, String> {
-        if line.trim().is_empty() {
+        let line = line.trim();
+        if line.is_empty() {
             return Ok(None);
         }
 
-        let json: serde_json::Value = match serde_json::from_str(line) {
-            Ok(v) => v,
-            Err(_) => return Ok(None),
+        let parts: Vec<&str> = line.split(',').collect();
+        if parts.len() < 4 {
+            return Ok(None);
+        }
+
+        // parts[0] = time (e.g., "00:14:27.376597")
+        // parts[1] = process_name.pid (e.g., "syslogd.130")
+        // parts[2] = bytes_in (e.g., " 0" or " 5636")
+        // parts[3] = bytes_out (e.g., " 6425")
+
+        let process_field = parts[1].trim();
+        
+        // Split process name and PID
+        // Format: "name.pid" or just "name" if no PID
+        let (name, pid) = if let Some(last_dot) = process_field.rfind('.') {
+            let name_part = &process_field[..last_dot];
+            let pid_part = &process_field[last_dot + 1..];
+            let pid = pid_part.parse::<u32>().unwrap_or(0);
+            (name_part.to_string(), pid)
+        } else {
+            (process_field.to_string(), 0)
         };
 
-        let name = json.get("name")
-            .or_else(|| json.get("process_name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown")
-            .to_string();
+        // Parse bytes (they have leading spaces)
+        let bytes_in = parts[2].trim().parse::<u64>().unwrap_or(0);
+        let bytes_out = parts[3].trim().parse::<u64>().unwrap_or(0);
 
-        let pid = json.get("pid")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as u32;
-
-        let bytes_in = json.get("bytes_in")
-            .and_then(|v| v.as_str())
-            .and_then(|s| parse_bytes(s))
-            .unwrap_or(0);
-
-        let bytes_out = json.get("bytes_out")
-            .and_then(|v| v.as_str())
-            .and_then(|s| parse_bytes(s))
-            .unwrap_or(0);
-
+        // Skip kernel_task and zero-traffic entries
         if name == "kernel_task" || (bytes_in == 0 && bytes_out == 0) {
             return Ok(None);
         }
@@ -96,40 +109,20 @@ impl NettopCollector {
     }
 }
 
-/// Parse byte string like "1.2MB" or "456KB" to u64
-fn parse_bytes(s: &str) -> Option<u64> {
-    let s = s.trim();
-    
-    if let Ok(n) = s.parse::<u64>() {
-        return Some(n);
-    }
-
-    let multiplier = if s.ends_with("KB") || s.ends_with("KiB") {
-        1024u64
-    } else if s.ends_with("MB") || s.ends_with("MiB") {
-        1024 * 1024
-    } else if s.ends_with("GB") || s.ends_with("GiB") {
-        1024 * 1024 * 1024
-    } else if s.ends_with("B") {
-        1
-    } else {
-        return None;
-    };
-
-    let num_str = &s[..s.len().saturating_sub(2)];
-    let num: f64 = num_str.parse().ok()?;
-    
-    Some((num * multiplier as f64) as u64)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_bytes() {
-        assert_eq!(parse_bytes("1024"), Some(1024));
-        assert_eq!(parse_bytes("1KB"), Some(1024));
-        assert_eq!(parse_bytes("1.5MB"), Some(1024 * 1024 + 512 * 1024));
+    fn test_parse_line() {
+        let collector = NettopCollector::new();
+        
+        // Test parsing
+        let line = "00:14:27.376597,syslogd.130, 0, 6425,";
+        let result = collector.parse_line(line).unwrap().unwrap();
+        assert_eq!(result.name, "syslogd");
+        assert_eq!(result.pid, 130);
+        assert_eq!(result.bytes_in, 0);
+        assert_eq!(result.bytes_out, 6425);
     }
 }
