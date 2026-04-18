@@ -74,9 +74,13 @@ impl HistoryChart {
                             
                             ui.horizontal(|ui| {
                                 ui.label(format_bytes(h.bytes_in));
-                                ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
+                                let mut pb_in = egui::ProgressBar::new(in_ratio as f64);
+                                pb_in = pb_in.fill(egui::Color32::BLUE);
+                                ui.add(pb_in);
                                 ui.add_space(10.0);
-                                ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
+                                let mut pb_out = egui::ProgressBar::new(out_ratio as f64);
+                                pb_out = pb_out.fill(egui::Color32::GREEN);
+                                ui.add(pb_out);
                                 ui.label(format_bytes(h.bytes_out));
                             });
                         }
@@ -107,9 +111,13 @@ impl HistoryChart {
                             
                             ui.horizontal(|ui| {
                                 ui.label(&d.day);
-                                ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
+                                let mut pb_in = egui::ProgressBar::new(in_ratio as f64);
+                                pb_in = pb_in.fill(egui::Color32::BLUE);
+                                ui.add(pb_in);
                                 ui.add_space(10.0);
-                                ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
+                                let mut pb_out = egui::ProgressBar::new(out_ratio as f64);
+                                pb_out = pb_out.fill(egui::Color32::GREEN);
+                                ui.add(pb_out);
                             });
                         }
                     });

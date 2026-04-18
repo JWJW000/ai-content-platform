@@ -42,14 +42,18 @@ impl TrafficPanel {
         ui.horizontal(|ui| {
             ui.label("↑");
             let ratio = self.speed_in as f32 / max_speed;
-            ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::GREEN));
+            let mut pb = egui::ProgressBar::new(ratio as f64);
+            pb = pb.fill(egui::Color32::GREEN);
+            ui.add(pb);
             ui.label(format_speed(self.speed_in));
         });
         
         ui.horizontal(|ui| {
             ui.label("↓");
             let ratio = self.speed_out as f32 / max_speed;
-            ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::BLUE));
+            let mut pb = egui::ProgressBar::new(ratio as f64);
+            pb = pb.fill(egui::Color32::BLUE);
+            ui.add(pb);
             ui.label(format_speed(self.speed_out));
         });
     }
