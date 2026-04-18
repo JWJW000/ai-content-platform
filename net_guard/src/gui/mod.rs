@@ -2,6 +2,8 @@
 //! 
 //! Main window, panels, and UI components.
 
+use egui::Widget;
+
 mod traffic_panel;
 mod process_list;
 mod history_chart;
