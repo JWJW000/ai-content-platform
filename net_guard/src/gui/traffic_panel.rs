@@ -23,40 +23,34 @@ impl TrafficPanel {
         self.speed_out = speed_out;
         self.history = history.clone();
     }
-}
-
-impl egui::Widget for TrafficPanel {
-    fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
-        ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                ui.label("↑ Upload:");
-                ui.label(egui::RichText::new(format_speed(self.speed_in)).color(egui::Color32::GREEN));
-                
-                ui.add_space(30.0);
-                
-                ui.label("↓ Download:");
-                ui.label(egui::RichText::new(format_speed(self.speed_out)).color(egui::Color32::BLUE));
-            });
+    
+    pub fn show(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label("↑ Upload:");
+            ui.label(egui::RichText::new(format_speed(self.speed_in)).color(egui::Color32::GREEN));
             
-            ui.add_space(10.0);
+            ui.add_space(30.0);
             
-            let max_speed = (self.speed_in.max(self.speed_out) as f32).max(1.0);
-            
-            // Upload bar
-            ui.horizontal(|ui| {
-                ui.label("↑");
-                let ratio = self.speed_in as f32 / max_speed;
-                ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::GREEN));
-                ui.label(format_speed(self.speed_in));
-            });
-            
-            // Download bar
-            ui.horizontal(|ui| {
-                ui.label("↓");
-                let ratio = self.speed_out as f32 / max_speed;
-                ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::BLUE));
-                ui.label(format_speed(self.speed_out));
-            });
-        }).response
+            ui.label("↓ Download:");
+            ui.label(egui::RichText::new(format_speed(self.speed_out)).color(egui::Color32::BLUE));
+        });
+        
+        ui.add_space(10.0);
+        
+        let max_speed = (self.speed_in.max(self.speed_out) as f32).max(1.0);
+        
+        ui.horizontal(|ui| {
+            ui.label("↑");
+            let ratio = self.speed_in as f32 / max_speed;
+            ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::GREEN));
+            ui.label(format_speed(self.speed_in));
+        });
+        
+        ui.horizontal(|ui| {
+            ui.label("↓");
+            let ratio = self.speed_out as f32 / max_speed;
+            ui.add(egui::ProgressBar::new(ratio as f64).fill(egui::Color32::BLUE));
+            ui.label(format_speed(self.speed_out));
+        });
     }
 }

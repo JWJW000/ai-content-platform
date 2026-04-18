@@ -20,10 +20,8 @@ impl ProcessList {
         sorted.truncate(20);
         self.processes = sorted;
     }
-}
 
-impl egui::Widget for ProcessList {
-    fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
+    pub fn show(&mut self, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
             egui::Grid::new("process_grid")
                 .num_columns(4)
@@ -37,9 +35,9 @@ impl egui::Widget for ProcessList {
                     
                     for (idx, p) in self.processes.iter().enumerate() {
                         let name_color = match idx {
-                            0 => egui::Color32::from_rgb(255, 215, 0),   // gold
-                            1 => egui::Color32::from_rgb(192, 192, 192), // silver  
-                            2 => egui::Color32::from_rgb(205, 127, 50),  // bronze
+                            0 => egui::Color32::from_rgb(255, 215, 0),
+                            1 => egui::Color32::from_rgb(192, 192, 192),
+                            2 => egui::Color32::from_rgb(205, 127, 50),
                             _ => egui::Color32::WHITE,
                         };
                         
@@ -50,6 +48,6 @@ impl egui::Widget for ProcessList {
                         ui.end_row();
                     }
                 });
-        }).inner
+        });
     }
 }

@@ -2,8 +2,6 @@
 //! 
 //! Main window, panels, and UI components.
 
-use egui::Widget;
-
 mod traffic_panel;
 mod process_list;
 mod history_chart;
@@ -96,14 +94,14 @@ impl eframe::App for NetGuardApp {
             ui.heading("🌐 NetGuard - Network Traffic Monitor");
             ui.separator();
             
-            self.traffic_panel.ui(ui);
+            self.traffic_panel.show(ui);
             
             ui.separator();
             
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     ui.heading("📊 Process Ranking");
-                    self.process_list.ui(ui);
+                    self.process_list.show(ui);
                 });
                 
                 ui.separator();
@@ -113,7 +111,7 @@ impl eframe::App for NetGuardApp {
                     if let Ok(daily) = self.database.get_daily_history(7) {
                         self.history_chart.update_daily(&daily);
                     }
-                    self.history_chart.ui(ui);
+                    self.history_chart.show(ui);
                 });
             });
         });

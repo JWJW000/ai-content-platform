@@ -38,87 +38,83 @@ impl HistoryChart {
             ViewMode::Daily => ViewMode::Hourly,
         };
     }
-}
 
-impl egui::Widget for HistoryChart {
-    fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
-        ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                if ui.selectable_label(self.view_mode == ViewMode::Hourly, "Hourly").clicked() {
-                    self.view_mode = ViewMode::Hourly;
-                }
-                if ui.selectable_label(self.view_mode == ViewMode::Daily, "Daily").clicked() {
-                    self.view_mode = ViewMode::Daily;
-                }
-            });
-            
-            match self.view_mode {
-                ViewMode::Hourly => {
-                    if self.hourly_data.is_empty() {
-                        ui.label("No hourly data available");
-                    } else {
-                        let total_in: u64 = self.hourly_data.iter().map(|h| h.bytes_in).sum();
-                        let total_out: u64 = self.hourly_data.iter().map(|h| h.bytes_out).sum();
-                        ui.label(format!("Last {} hours: ↑ {} ↓ {}", 
-                            self.hourly_data.len(),
-                            format_bytes(total_out),
-                            format_bytes(total_in)
-                        ));
+    pub fn show(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            if ui.selectable_label(self.view_mode == ViewMode::Hourly, "Hourly").clicked() {
+                self.view_mode = ViewMode::Hourly;
+            }
+            if ui.selectable_label(self.view_mode == ViewMode::Daily, "Daily").clicked() {
+                self.view_mode = ViewMode::Daily;
+            }
+        });
+        
+        match self.view_mode {
+            ViewMode::Hourly => {
+                if self.hourly_data.is_empty() {
+                    ui.label("No hourly data available");
+                } else {
+                    let total_in: u64 = self.hourly_data.iter().map(|h| h.bytes_in).sum();
+                    let total_out: u64 = self.hourly_data.iter().map(|h| h.bytes_out).sum();
+                    ui.label(format!("Last {} hours: ↑ {} ↓ {}", 
+                        self.hourly_data.len(),
+                        format_bytes(total_out),
+                        format_bytes(total_in)
+                    ));
+                    
+                    egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
+                        let max_val = self.hourly_data.iter()
+                            .map(|h| h.bytes_in.max(h.bytes_out))
+                            .max()
+                            .unwrap_or(1);
                         
-                        egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
-                            let max_val = self.hourly_data.iter()
-                                .map(|h| h.bytes_in.max(h.bytes_out))
-                                .max()
-                                .unwrap_or(1);
+                        for h in self.hourly_data.iter().rev().take(12) {
+                            let in_ratio = h.bytes_in as f32 / max_val as f32;
+                            let out_ratio = h.bytes_out as f32 / max_val as f32;
                             
-                            for h in self.hourly_data.iter().rev().take(12) {
-                                let in_ratio = h.bytes_in as f32 / max_val as f32;
-                                let out_ratio = h.bytes_out as f32 / max_val as f32;
-                                
-                                ui.horizontal(|ui| {
-                                    ui.label(format_bytes(h.bytes_in));
-                                    ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
-                                    ui.add_space(10.0);
-                                    ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
-                                    ui.label(format_bytes(h.bytes_out));
-                                });
-                            }
-                        });
-                    }
-                }
-                ViewMode::Daily => {
-                    if self.daily_data.is_empty() {
-                        ui.label("No daily data available");
-                    } else {
-                        let total_in: u64 = self.daily_data.iter().map(|d| d.bytes_in).sum();
-                        let total_out: u64 = self.daily_data.iter().map(|d| d.bytes_out).sum();
-                        ui.label(format!("Last {} days: ↑ {} ↓ {}", 
-                            self.daily_data.len(),
-                            format_bytes(total_out),
-                            format_bytes(total_in)
-                        ));
-                        
-                        egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
-                            let max_val = self.daily_data.iter()
-                                .map(|d| d.bytes_in.max(d.bytes_out))
-                                .max()
-                                .unwrap_or(1);
-                            
-                            for d in self.daily_data.iter().rev() {
-                                let in_ratio = d.bytes_in as f32 / max_val as f32;
-                                let out_ratio = d.bytes_out as f32 / max_val as f32;
-                                
-                                ui.horizontal(|ui| {
-                                    ui.label(&d.day);
-                                    ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
-                                    ui.add_space(10.0);
-                                    ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
-                                });
-                            }
-                        });
-                    }
+                            ui.horizontal(|ui| {
+                                ui.label(format_bytes(h.bytes_in));
+                                ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
+                                ui.add_space(10.0);
+                                ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
+                                ui.label(format_bytes(h.bytes_out));
+                            });
+                        }
+                    });
                 }
             }
-        }).response
+            ViewMode::Daily => {
+                if self.daily_data.is_empty() {
+                    ui.label("No daily data available");
+                } else {
+                    let total_in: u64 = self.daily_data.iter().map(|d| d.bytes_in).sum();
+                    let total_out: u64 = self.daily_data.iter().map(|d| d.bytes_out).sum();
+                    ui.label(format!("Last {} days: ↑ {} ↓ {}", 
+                        self.daily_data.len(),
+                        format_bytes(total_out),
+                        format_bytes(total_in)
+                    ));
+                    
+                    egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
+                        let max_val = self.daily_data.iter()
+                            .map(|d| d.bytes_in.max(d.bytes_out))
+                            .max()
+                            .unwrap_or(1);
+                        
+                        for d in self.daily_data.iter().rev() {
+                            let in_ratio = d.bytes_in as f32 / max_val as f32;
+                            let out_ratio = d.bytes_out as f32 / max_val as f32;
+                            
+                            ui.horizontal(|ui| {
+                                ui.label(&d.day);
+                                ui.add(egui::ProgressBar::new(in_ratio as f64).fill(egui::Color32::BLUE));
+                                ui.add_space(10.0);
+                                ui.add(egui::ProgressBar::new(out_ratio as f64).fill(egui::Color32::GREEN));
+                            });
+                        }
+                    });
+                }
+            }
+        }
     }
 }
