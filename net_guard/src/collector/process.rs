@@ -41,7 +41,7 @@ fn get_process_info_macos(pid: u32) -> Option<ProcessInfo> {
         return None;
     }
     
-    let path = PathBuf::from(String::from_utf8_lossy(&name_buf[..name_len as usize]));
+    let path = PathBuf::from(String::from_utf8_lossy(&name_buf[..name_len as usize]).into_owned());
     let name = path.file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown")
