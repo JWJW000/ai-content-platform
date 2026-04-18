@@ -1,0 +1,127 @@
+name: Build & Release macOS App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'net_guard/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Build Release
+        working-directory: ./net_guard
+        run: |
+          cargo build --release --locked
+          ls -la target/release/net_guard || ls -la target/release/*.app 2>/dev/null || echo "Binary location check"
+
+      - name: Create .app bundle
+        working-directory: ./net_guard
+        run: |
+          # Get binary name
+          BINARY_NAME=$(cargo metadata --no-deps --format-version 1 | python3 -c "import sys,json; print(json.load(sys.stdin)['packages'][0]['name'])")
+          echo "App name: $BINARY_NAME"
+          
+          # Create app bundle structure
+          APP_NAME="${BINARY_NAME}.app"
+          mkdir -p "$APP_NAME/Contents/MacOS"
+          mkdir -p "$APP_NAME/Contents/Resources"
+          
+          # Copy binary
+          cp "target/release/$BINARY_NAME" "$APP_NAME/Contents/MacOS/$BINARY_NAME"
+          chmod +x "$APP_NAME/Contents/MacOS/$BINARY_NAME"
+          
+          # Create Info.plist
+          cat > "$APP_NAME/Contents/Info.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>$BINARY_NAME</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.netguard.app</string>
+              <key>CFBundleName</key>
+              <string>$BINARY_NAME</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>0.1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>10.15</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>NSHumanReadableCopyright</key>
+              <string>Copyright © 2026 NetGuard. All rights reserved.</string>
+          </dict>
+          </plist>
+          EOF
+          
+          # Create minimal entitlements for network access
+          cat > "$APP_NAME/Contents/Resources/net_guard.entitlements" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>com.apple.security.network.client</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          
+          echo "App bundle created: $APP_NAME"
+          ls -laR "$APP_NAME"
+
+      - name: Package .app
+        working-directory: ./net_guard
+        run: |
+          BINARY_NAME=$(cargo metadata --no-deps --format-version 1 | python3 -c "import sys,json; print(json.load(sys.stdin)['packages'][0]['name'])")
+          APP_NAME="${BINARY_NAME}.app"
+          
+          # Create DMG from .app
+          which create-dmg || brew install create-dmg
+          
+          # Alternative: just zip the app
+          zip -r "${BINARY_NAME}-macos.zip" "$APP_NAME"
+          ls -la *.zip
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v0.1.0
+          release_name: NetGuard v0.1.0
+          draft: false
+          prerelease: false
+          files: |
+            net_guard/*.zip
+            net_guard/*.app 2>/dev/null || true
+          body: |
+            # NetGuard - macOS Network Traffic Monitor
+            
+            A native macOS desktop application for monitoring network traffic with process-level ranking and historical data visualization.
+            
+            ## Features
+            - 🌐 Real-time network traffic monitoring
+            - 📊 Process-level traffic ranking
+            - 📈 Historical data (7 days)
+            - 🎨 Native macOS style
+            
+            ## Installation
+            1. Download the .zip file
+            2. Unzip and move .app to Applications
+            3. Allow network access when prompted
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
